@@ -2,7 +2,7 @@
 
 An n8n workflow that receives a customer enquiry, checks it, works out which sector and use case it is about, sets a priority and routes it to the right sales team, with a reply in under a second.
 
-[![tests](https://github.com/Sachinisand/n8n-lead-intake-automation/actions/workflows/tests.yml/badge.svg)](https://github.com/Sachinisand/n8n-lead-intake-automation/actions/workflows/tests.yml)
+**[▶ Live demo](https://sachinisand.github.io/n8n-lead-intake-automation/demo/)** · [![tests](https://github.com/Sachinisand/n8n-lead-intake-automation/actions/workflows/tests.yml/badge.svg)](https://github.com/Sachinisand/n8n-lead-intake-automation/actions/workflows/tests.yml)
 
 ```mermaid
 flowchart LR
@@ -14,7 +14,7 @@ flowchart LR
 
 ## Demo
 
-Download [`demo/index.html`](demo/index.html) and open it in any browser: no installation, no n8n, no localhost. It runs the same `classify.js` as the n8n Code node, so the answers match the workflow. Pick an example (hotel, warehouse, clinic, broken form) or type your own enquiry, and the page shows each workflow step and the reply.
+**[▶ Open the live demo](https://sachinisand.github.io/n8n-lead-intake-automation/demo/)** (runs in the browser, nothing to install). You can also download [`demo/index.html`](demo/index.html) and open it offline. It runs the same `classify.js` as the n8n Code node, so the answers match the workflow. Pick an example (hotel, warehouse, clinic, broken form) or type your own enquiry, and the page shows each workflow step and the reply.
 
 ## Why
 
