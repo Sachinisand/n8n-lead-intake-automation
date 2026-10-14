@@ -1,0 +1,18 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/test_classify.mjs
+      - name: Workflow file contains the current Code-node logic
+        run: |
+          node -e "const fs=require('fs');const wf=JSON.parse(fs.readFileSync('lead-intake-workflow.json','utf8'));const code=wf.nodes.find(n=>n.type==='n8n-nodes-base.code').parameters.jsCode;if(code!==fs.readFileSync('classify.js','utf8')){console.error('lead-intake-workflow.json is out of date');process.exit(1)}console.log('workflow in sync')"
