@@ -12,6 +12,10 @@ flowchart LR
     C -- no --> E[Reply 400<br/>list of errors]
 ```
 
+## Demo
+
+Download [`demo/index.html`](demo/index.html) and open it in any browser: no installation, no n8n, no localhost. It runs the same `classify.js` as the n8n Code node, so the answers match the workflow. Pick an example (hotel, warehouse, clinic, broken form) or type your own enquiry, and the page shows each workflow step and the reply.
+
 ## Why
 
 Enquiries from a website form or email often land in one inbox and are sorted by hand. This workflow does the first sorting step automatically: incomplete enquiries are rejected with a clear reason, and valid ones arrive with a sector, a use case, a priority and the responsible team.
@@ -35,12 +39,20 @@ npx n8n            # or: docker run -it --rm -p 5678:5678 n8nio/n8n
 
 1. Open http://localhost:5678, then **Workflows → Import from File** and choose `lead-intake-workflow.json`.
 2. Activate the workflow.
-3. Send an example enquiry:
+3. Send an example enquiry (or see "Test inside n8n" below):
 
 ```bash
 curl -X POST http://localhost:5678/webhook/lead-intake \
   -H "Content-Type: application/json" \
   --data @examples/hotel_quote.json
+```
+
+### Test inside n8n (no curl needed)
+
+Open the **Webhook** node, choose **Set mock data** (pencil icon on the output side), paste the example wrapped in `body`, then click **Test workflow**:
+
+```json
+{"body": {"name": "Anna Becker", "company": "Hotel Seeblick GmbH", "email": "A.Becker@seeblick-hotel.de", "employees": 120, "message": "Wir suchen einen Serviceroboter für unser Restaurant und hätten gern ein Angebot."}}
 ```
 
 Expected answers for the four examples (tested with n8n 1.123):
@@ -58,9 +70,10 @@ The classification logic lives in `classify.js` and is copied into the Code node
 
 ```bash
 node tests/test_classify.mjs
+node demo/build.mjs     # rebuild the browser demo after changing classify.js
 ```
 
-GitHub Actions runs these checks on every push and also verifies that the workflow file contains the current version of `classify.js`.
+GitHub Actions runs these checks on every push and also checks that the workflow file and the browser demo contain the current version of `classify.js`.
 
 ## Design decisions
 
