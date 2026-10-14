@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Lead Intake Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: enquiry form on the left, the four workflow steps and the reply on the right; one column on phones. */
+:root {
+  --bg: #f3f5f7; --panel: #ffffff; --fg: #17212b; --muted: #5b6875; --line: #d9dfe5;
+  --accent: #0f6e8c; --accent-soft: #e2f0f4;
+  --ok: #1d7a46; --ok-soft: #e3f3ea; --bad: #b3261e; --bad-soft: #fbe7e5; --warn: #9a6100; --warn-soft: #fbf0db;
+  --idle: #c4ccd4;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11171d; --panel: #18212a; --fg: #e5ebf0; --muted: #98a6b3; --line: #2b3742;
+  --accent: #4fb3d3; --accent-soft: #173341;
+  --ok: #5cc98a; --ok-soft: #173326; --bad: #f08a80; --bad-soft: #3a1d1b; --warn: #e6b45a; --warn-soft: #382b14;
+  --idle: #3c4955; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11171d; --panel: #18212a; --fg: #e5ebf0; --muted: #98a6b3; --line: #2b3742;
+  --accent: #4fb3d3; --accent-soft: #173341;
+  --ok: #5cc98a; --ok-soft: #173326; --bad: #f08a80; --bad-soft: #3a1d1b; --warn: #e6b45a; --warn-soft: #382b14;
+  --idle: #3c4955; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 40px }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px }
+header { display: grid; gap: 6px }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent) }
+h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.15; margin: 0; text-wrap: balance }
+.lede { margin: 0; color: var(--muted); max-width: 68ch }
+.lede a { color: var(--accent) }
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 22px; align-items: start }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 16px; min-width: 0 }
+h2 { font-size: 13px; margin: 0; font-family: var(--mono); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.presets { display: flex; flex-wrap: wrap; gap: 8px }
+.chip { font: 500 13px var(--sans); border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 999px; padding: 6px 12px; cursor: pointer }
+.chip:hover { border-color: var(--accent) }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent) }
+form { display: grid; gap: 12px }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+@media (max-width: 480px) { .row { grid-template-columns: 1fr } }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted) }
+input, textarea { font: 400 15px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100% }
+textarea { min-height: 92px; resize: vertical }
+input:focus, textarea:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+.send { font: 600 15px var(--sans); background: var(--accent); color: var(--panel); border: 0; border-radius: 6px; padding: 11px 16px; cursor: pointer; justify-self: start }
+.send:hover { filter: brightness(1.08) }
+.hint { font-size: 13px; color: var(--muted); margin: 0 }
+
+/* workflow steps */
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; position: relative }
+@media (max-width: 560px) { .flow { grid-template-columns: 1fr 1fr } }
+.node { border: 1.5px solid var(--idle); border-radius: 8px; padding: 10px; display: grid; gap: 2px; background: var(--panel); transition: border-color .25s, background .25s; min-width: 0 }
+.node b { font-size: 13px; line-height: 1.25 }
+.node span { font: 400 11px/1.3 var(--mono); color: var(--muted); overflow-wrap: anywhere }
+.node .tick { font: 500 11px var(--mono); color: var(--idle) }
+.node.done { border-color: var(--ok); background: var(--ok-soft) }
+.node.done .tick { color: var(--ok) }
+.node.fail { border-color: var(--bad); background: var(--bad-soft) }
+.node.fail .tick { color: var(--bad) }
+.node.active { border-color: var(--accent); background: var(--accent-soft) }
+
+/* reply */
+.status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.code { font: 600 13px var(--mono); padding: 3px 9px; border-radius: 5px }
+.code.ok { background: var(--ok-soft); color: var(--ok) }
+.code.bad { background: var(--bad-soft); color: var(--bad) }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 }
+.fact { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px }
+.fact dt { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.fact dd { margin: 0; font-size: 17px; font-weight: 600 }
+.prio { display: inline-block; font-size: 13px; font-weight: 600; padding: 2px 10px; border-radius: 999px }
+.prio.high { background: var(--bad-soft); color: var(--bad) }
+.prio.medium { background: var(--warn-soft); color: var(--warn) }
+.prio.normal { background: var(--accent-soft); color: var(--accent) }
+.why { margin: 0; font-size: 14px; color: var(--muted) }
+.why strong { color: var(--fg) }
+.errors { margin: 0; padding-left: 18px; color: var(--bad); font-weight: 500 }
+details { border-top: 1px solid var(--line); padding-top: 10px }
+summary { cursor: pointer; font-size: 13px; color: var(--muted) }
+pre { margin: 8px 0 0; font: 400 13px/1.5 var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto }
+.rules { font-size: 13px; color: var(--muted); margin: 0; padding-left: 18px; display: grid; gap: 2px }
+footer { font-size: 13px; color: var(--muted) }
+footer a { color: var(--accent) }
+@media (prefers-reduced-motion: reduce) { .node { transition: none } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">n8n workflow · demo</div>
+    <h1>Lead intake: check and route a customer enquiry</h1>
+    <p class="lede">Pick an example or type your own enquiry and press <strong>Send enquiry</strong>. The page runs the same <code>classify.js</code> code as the n8n Code node, so the reply is what the workflow returns. Source and tests: <a href="https://github.com/Sachinisand/n8n-lead-intake-automation" target="_blank" rel="noopener">github.com/Sachinisand/n8n-lead-intake-automation</a>.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-enquiry">
+      <h2 id="h-enquiry">1 · Enquiry</h2>
+      <div class="presets" role="group" aria-label="Examples">
+        <button class="chip" type="button" data-ex="hotel_quote">Hotel asks for a quote</button>
+        <button class="chip" type="button" data-ex="warehouse_cleaning">Warehouse cleaning</button>
+        <button class="chip" type="button" data-ex="clinic_info">Clinic transport</button>
+        <button class="chip" type="button" data-ex="invalid">Broken form</button>
+      </div>
+      <form id="f" novalidate>
+        <div class="row">
+          <label for="name">Name<input id="name" name="name" autocomplete="off"></label>
+          <label for="company">Company<input id="company" name="company" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label for="email">Email<input id="email" name="email" autocomplete="off"></label>
+          <label for="employees">Employees<input id="employees" name="employees" inputmode="numeric" autocomplete="off"></label>
+        </div>
+        <label for="message">Message<textarea id="message" name="message"></textarea></label>
+        <button class="send" type="submit">Send enquiry</button>
+        <p class="hint">Examples are invented test data.</p>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="h-flow">
+      <h2 id="h-flow">2 · Workflow</h2>
+      <div class="flow" id="flow">
+        <div class="node" data-step="0"><b>Webhook</b><span>POST /lead-intake</span><span class="tick">waiting</span></div>
+        <div class="node" data-step="1"><b>Validate &amp; classify</b><span>Code node</span><span class="tick">waiting</span></div>
+        <div class="node" data-step="2"><b>Is the lead valid?</b><span>IF node</span><span class="tick">waiting</span></div>
+        <div class="node" data-step="3"><b id="reply-name">Reply</b><span id="reply-sub">200 or 400</span><span class="tick">waiting</span></div>
+      </div>
+
+      <h2>3 · Reply</h2>
+      <div id="out" aria-live="polite"><p class="why">Send an enquiry to see the reply.</p></div>
+
+      <details>
+        <summary>Routing rules</summary>
+        <ul class="rules">
+          <li>Required: name, message and a valid email (email is lower-cased).</li>
+          <li>Sector from keywords: hotel, restaurant → hospitality · Lager, warehouse → logistics · Klinik, Pflege → healthcare · Supermarkt → retail.</li>
+          <li>Use case: Reinigung / cleaning · Serviceroboter / serving · Transport / Lieferung.</li>
+          <li>Priority: <strong>high</strong> = asks for a quote or price and has 50+ employees · <strong>medium</strong> = one of the two · <strong>normal</strong> = neither.</li>
+          <li>Reply time: high 4 h · medium 24 h · normal 48 h.</li>
+        </ul>
+      </details>
+    </section>
+  </div>
+
+  <footer>Demo by Sachini Hewahattage. In n8n the same logic runs as a Webhook → Code → IF → Respond to Webhook workflow.</footer>
+</div>
+
+<script>
+// classify.js and the examples, copied in by demo/build.mjs (the tests check that they match)
+const CLASSIFY_SRC = /*CLASSIFY_START*/"// Lead intake: validate, normalise and route one incoming enquiry.\n// Runs inside an n8n Code node (\"Run Once for All Items\"). Keywords are German and English.\n\nconst SECTORS = {\n  hospitality: ['hotel', 'restaurant', 'gastronomie', 'gastro', 'café', 'cafe', 'kantine', 'catering'],\n  retail:      ['retail', 'einzelhandel', 'supermarkt', 'supermarket', 'shop', 'store', 'markt'],\n  logistics:   ['logistik', 'logistics', 'lager', 'warehouse', 'versand', 'intralogistik'],\n  healthcare:  ['klinik', 'clinic', 'krankenhaus', 'hospital', 'pflege', 'care home', 'altenheim', 'praxis'],\n};\nconst USE_CASES = {\n  cleaning:  ['reinigung', 'cleaning', 'putzen', 'boden', 'floor'],\n  serving:   ['servier', 'serving', 'serviceroboter', 'service-roboter', 'service robot', 'kellner', 'waiter'],\n  transport: ['transport', 'delivery', 'lieferung', 'material', 'botengang'],\n};\nconst URGENT = ['angebot', 'quote', 'preis', 'price', 'dringend', 'asap', 'sofort', 'kaufen', 'buy'];\nconst TEAM = { hospitality: 'Sales Hospitality', retail: 'Sales Retail', logistics: 'Sales Logistics',\n               healthcare: 'Sales Healthcare', other: 'Inside Sales' };\n\nconst findFirst = (text, groups) => {\n  for (const [key, words] of Object.entries(groups)) {\n    if (words.some(w => text.includes(w))) return key;\n  }\n  return 'other';\n};\n\nreturn $input.all().map(item => {\n  const body = item.json.body ?? item.json;          // webhook payload or manual test data\n  const clean = v => (typeof v === 'string' ? v.trim() : v);\n  const lead = {\n    name: clean(body.name) || '',\n    company: clean(body.company) || '',\n    email: (clean(body.email) || '').toLowerCase(),\n    industry: (clean(body.industry) || '').toLowerCase(),\n    message: clean(body.message) || '',\n    employees: Number(body.employees) || null,\n  };\n\n  const errors = [];\n  if (!lead.name) errors.push('name is missing');\n  if (!lead.message) errors.push('message is missing');\n  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(lead.email)) errors.push('email is missing or invalid');\n\n  const text = `${lead.industry} ${lead.company} ${lead.message}`.toLowerCase();\n  const sector = findFirst(text, SECTORS);\n  const useCase = findFirst(text, USE_CASES);\n  const urgent = URGENT.some(w => text.includes(w));\n  const large = (lead.employees ?? 0) >= 50;\n  const priority = urgent && large ? 'high' : urgent || large ? 'medium' : 'normal';\n\n  return { json: {\n    valid: errors.length === 0,\n    errors,\n    lead,\n    routing: { sector, use_case: useCase, priority, team: TEAM[sector],\n               reply_within_hours: { high: 4, medium: 24, normal: 48 }[priority] },\n    received_at: new Date().toISOString(),\n  } };\n});\n"/*CLASSIFY_END*/;
+const EXAMPLES = /*EXAMPLES_START*/{
+  "clinic_info": {
+    "name": "Dr. Lena Hoffmann",
+    "company": "Praxisgemeinschaft Mitte",
+    "email": "info@praxis-mitte.de",
+    "employees": 12,
+    "message": "Gibt es Roboter für den Materialtransport in einer Klinik?"
+  },
+  "hotel_quote": {
+    "name": "Anna Becker",
+    "company": "Hotel Seeblick GmbH",
+    "email": "A.Becker@seeblick-hotel.de",
+    "employees": 120,
+    "message": "Wir suchen einen Serviceroboter für unser Restaurant und hätten gern ein Angebot."
+  },
+  "invalid": {
+    "name": "",
+    "company": "Test",
+    "email": "not-an-email",
+    "message": ""
+  },
+  "warehouse_cleaning": {
+    "name": "Tom Weber",
+    "company": "Nordlager KG",
+    "email": "tom.weber@nordlager.de",
+    "employees": 35,
+    "message": "We are interested in a cleaning robot for our warehouse floor."
+  }
+}/*EXAMPLES_END*/;
+
+const runWorkflow = body => new Function('$input', CLASSIFY_SRC)({ all: () => [{ json: { body } }] })[0].json;
+
+const $ = id => document.getElementById(id);
+const fields = ['name', 'company', 'email', 'employees', 'message'];
+const nodes = [...document.querySelectorAll('.node')];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+let runId = 0;
+
+function load(name) {
+  const ex = EXAMPLES[name];
+  fields.forEach(f => { $(f).value = ex[f] ?? ''; });
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.ex === name));
+}
+
+function setNode(i, state, text) {
+  nodes[i].className = 'node ' + state;
+  nodes[i].querySelector('.tick').textContent = text;
+}
+
+function render(res) {
+  if (!res.valid) {
+    const reply = { status: 'rejected', errors: res.errors };
+    return `<div class="status"><span class="code bad">400</span><strong>Rejected</strong></div>
+      <ul class="errors">${res.errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul>
+      <details><summary>JSON reply</summary><pre>${esc(JSON.stringify(reply, null, 2))}</pre></details>`;
+  }
+  const r = res.routing;
+  const reply = { status: 'accepted', team: r.team, sector: r.sector, use_case: r.use_case, priority: r.priority, reply_within_hours: r.reply_within_hours };
+  const large = (res.lead.employees ?? 0) >= 50;
+  const urgent = r.priority === 'high' || (r.priority === 'medium' && !large);
+  return `<div class="status"><span class="code ok">200</span><strong>Accepted, sent to ${esc(r.team)}</strong></div>
+    <dl class="facts">
+      <div class="fact"><dt>Team</dt><dd>${esc(r.team)}</dd></div>
+      <div class="fact"><dt>Sector</dt><dd>${esc(r.sector)}</dd></div>
+      <div class="fact"><dt>Use case</dt><dd>${esc(r.use_case)}</dd></div>
+      <div class="fact"><dt>Priority</dt><dd><span class="prio ${r.priority}">${r.priority}</span></dd></div>
+      <div class="fact"><dt>Reply within</dt><dd>${r.reply_within_hours} h</dd></div>
+    </dl>
+    <p class="why">Why: asks for a quote or price: <strong>${urgent ? 'yes' : 'no'}</strong> · 50+ employees: <strong>${large ? 'yes' : 'no'}</strong> → priority <strong>${r.priority}</strong>. Email saved as <strong>${esc(res.lead.email)}</strong>.</p>
+    <details><summary>JSON reply</summary><pre>${esc(JSON.stringify(reply, null, 2))}</pre></details>`;
+}
+
+async function send(e) {
+  e?.preventDefault();
+  const id = ++runId;
+  const body = Object.fromEntries(fields.map(f => [f, $(f).value]));
+  nodes.forEach((_, i) => setNode(i, '', 'waiting'));
+  $('reply-name').textContent = 'Reply'; $('reply-sub').textContent = '200 or 400';
+  $('out').innerHTML = '<p class="why">Running…</p>';
+  const res = runWorkflow(body);
+  const steps = [
+    () => setNode(0, 'done', '✓ received'),
+    () => setNode(1, 'done', `✓ ${res.errors.length} error${res.errors.length === 1 ? '' : 's'}`),
+    () => setNode(2, res.valid ? 'done' : 'fail', res.valid ? '✓ true' : '✗ false'),
+    () => {
+      $('reply-name').textContent = res.valid ? 'Reply: routed' : 'Reply: rejected';
+      $('reply-sub').textContent = res.valid ? 'HTTP 200' : 'HTTP 400';
+      setNode(3, res.valid ? 'done' : 'fail', res.valid ? '✓ sent' : '✓ sent');
+      $('out').innerHTML = render(res);
+    },
+  ];
+  for (const [i, step] of steps.entries()) {
+    if (id !== runId) return;
+    setNode(i, 'active', 'running');
+    await wait(280);
+    if (id !== runId) return;
+    step();
+  }
+}
+
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => { load(c.dataset.ex); send(); }));
+$('f').addEventListener('submit', send);
+fields.forEach(f => $(f).addEventListener('input', () => document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', 'false'))));
+load('hotel_quote');
+send();
+</script>
+
+</body>
+</html>
