@@ -27,4 +27,8 @@ const medium = run({ name: 'A', email: 'a@b.de', message: 'Bitte schicken Sie mi
 assert.equal(medium.routing.priority, 'medium');                          // urgent but small
 assert.equal(medium.routing.team, 'Inside Sales');                        // no sector found
 
-console.log('All 5 checks passed');
+// the browser demo must use the current logic: run `node demo/build.mjs` after changing classify.js
+const demo = readFileSync(new URL('../demo/index.html', import.meta.url), 'utf8');
+assert.ok(demo.includes(JSON.stringify(code)), 'demo/index.html is out of date, run node demo/build.mjs');
+
+console.log('All 6 checks passed');
